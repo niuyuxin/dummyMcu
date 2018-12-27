@@ -5,6 +5,7 @@
 #include "framework.h"
 #include "dummyev.h"
 #include "lpc177x_8x_gpio.h"
+#include "debuguart.h"
 
 int led_blink(void) {
 	static int v;
@@ -21,6 +22,7 @@ int main(void)
 	thread_init();
 	uart03_timer_init();
 	uart2_nCCS_init();
+	uart1_debug_init();
 	creatTimerTickFun(led_blink, TIMER_TICK_THREAD_LED);
 	timeTickStart(0, 20); // …¡µ∆∆Ù∂Ø
 	initDummyEv();

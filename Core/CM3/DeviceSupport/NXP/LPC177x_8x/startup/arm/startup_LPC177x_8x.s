@@ -128,6 +128,7 @@ Reset_Handler   PROC
                 EXPORT  Reset_Handler             [WEAK]
 				IMPORT  SystemInit
                 IMPORT  __main
+				BL TestArmAsm
 				LDR     R0, =SystemInit
                 BLX     R0
                 LDR     R0, =__main
@@ -136,7 +137,48 @@ Reset_Handler   PROC
 
 
 ; Dummy Exception Handlers (infinite loops which can be modified)
+TestArmAsm PROC
+				MOV R0, #30
+				MOV R1, #11
+				CMP R0, R1
+				ITTET HI
+				MOVHI R1, R0
+				MOVHI R2, R0
+				MOVLS R3, R0
+				MOVHI R4, R0
+LOOP
+				MRS R0, APSR
+				LDR R1, =0xDFFFFFFF
+				AND R0, R1
+				CBZ R0, LOOPEXIT
+				B LOOP
+LOOPEXIT	
+				LDR R0, =0X12345678
+				REV R1, R0
+				; REVH R2, R0
+				REV16 R3, R0
+				LDR R0, = 0X00007879
+				REVSH R4, R0
+				mov r0, #1
+				TBB.W [pc, r0]
+branchTable
+				DCB ((dest0 - branchTable)/2)
+				DCB ((dest1 - branchTable)/2)				
+				DCB ((dest2 - branchTable)/2)				
+				DCB ((dest3 - branchTable)/2)				
 
+dest0
+				mov r0, #0
+dest1
+				mov r0, #1
+dest2
+				mov r0, #2
+dest3
+				mov r0, #3							
+
+				BLX LR
+				ENDP
+					
 NMI_Handler     PROC
                 EXPORT  NMI_Handler               [WEAK]
                 B       .

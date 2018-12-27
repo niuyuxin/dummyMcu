@@ -70,7 +70,9 @@ int dummyMeterValueStatus(int addr, meter_value_status_t* mvs, int size)
 }
 int dummyPlugBmsStatusTemp(int addr, plug_bms_status_temp_t* pbst, int size)
 {
-	uint8_t pState, len;
+	uint8_t pState, len, i = 0;
+	uint8_t bmsStateBuf[] = {0, 16, 1, 2, 3, 4, 0x81, 0x82};
+	static uint8_t bmsStatus[2];
 	memset(pbst, 0, size);
 	if (addr == 1) {
 		if (GPIO_ReadValue(0) & (1<<14)) { // p0.14检测是否连接电动汽车
@@ -78,23 +80,48 @@ int dummyPlugBmsStatusTemp(int addr, plug_bms_status_temp_t* pbst, int size)
 		} else {
 			pState = 2;
 		}
-		pbst->plugstatus = pState;
 	} else if (addr == 2) {
 		if (GPIO_ReadValue(1) & (1<<22)) { // p1_22检测是否连接电动汽车
 			pState = 0;
 		} else {
 			pState = 2;
 		}
-		pbst->plugstatus = pState;
 	}
-	
-	pbst->bmsstatus = (evReadyToCharge & (1<<addr)) ? 0x2 : 0x0;
+	if (evReadyToCharge & (1<<addr)) {
+		if (bmsStatus[addr-1] == 0) {
+			bmsStatus[addr-1] = 0x10;
+		} else if (bmsStatus[addr-1] == 0x10) {
+			bmsStatus[addr-1] = 1;
+		} else if (bmsStatus[addr-1] == 1) {
+			bmsStatus[addr-1] = 2;
+		} else if (bmsStatus[addr-1] == 4) {
+			bmsStatus[addr-1] = 0;
+		} else {
+			for (i = 0; i < sizeof(bmsStateBuf)/sizeof(bmsStateBuf[0]); i++) {
+				if (bmsStateBuf[i] == bmsStatus[addr-1]) {
+					break;
+				}
+			}
+			if (i >= sizeof(bmsStateBuf)/sizeof(bmsStateBuf[0])) {
+				bmsStatus[addr-1] = 0;
+			}
+		}
+	} else {
+		if (pState == 2)
+			bmsStatus[addr-1] = 4;
+		else 
+			bmsStatus[addr-1] = 0;
+	}
+	pbst->plugstatus = pState;
+	pbst->bmsstatus = bmsStatus[addr-1];
 	pbst->status.all = 0;
 	pbst->status.bit.insulationfault = 0;
 	pbst->status.bit.lockdriver = 0;
 	pbst->status.bit.auxivoltage1224switch = 0;
 	pbst->status.bit.relais = 0;
 	pbst->temperature = 66u;
+	pbst->status.bit.emergency = 0;
+	pbst->status.bit.dcmetercommfault = 0;
 	
 	nccs_frame.addr = addr;
 	nccs_frame.order = 2;
@@ -132,32 +159,34 @@ int dummyPsmStatus(int addr, psm_status_t* psms, uint8_t size)
 	UART2Send(LPC_UART2, frame_buf, len);	
 	return 0;
 }
+#define SOC_PREC	(15U)
+#define REMAINTIME_PREC (10U)
 int dummyBcs(int addr, bcs_t* bcs, int size) // Fixme: 
 {
 	int len;
 	static uint16_t curBcs[2];
 	static uint16_t volBcs[2];
-	static uint8_t soc[2];
-	static uint16_t remainTime[2];
+	static uint16_t soc[2];
+	static uint32_t remainTime[2];
 
 	
 	if (evReadyToCharge & (1<<addr)) {
 		if (curBcs[addr-1] < psmParam.maxCur*10) curBcs[addr-1]++;
 		if (volBcs[addr-1] < psmParam.maxVol*10) volBcs[addr-1]++;
-		if (soc[addr-1] < 99) soc[addr-1]++;
+		if (soc[addr-1] < 99*SOC_PREC) soc[addr-1]++;
 		if (remainTime[addr-1] > 0) remainTime[addr-1]--;
 	} else {
 		curBcs[addr-1] = 0;
 		volBcs[addr-1] = 0;
 		soc[addr-1] = 0;
-		remainTime[addr-1] = 65500;
+		remainTime[addr-1] = 65500*REMAINTIME_PREC;
 		return 0;
 	}
 	
 	bcs->batinfo = 90;
 	bcs->cur = curBcs[addr-1]+4000;
-	bcs->remaintime = remainTime[addr-1];
-	bcs->soc = soc[addr-1];
+	bcs->remaintime = remainTime[addr-1]/REMAINTIME_PREC;
+	bcs->soc = soc[addr-1]/SOC_PREC;
 	bcs->vol = volBcs[addr-1];
 	
 	nccs_frame.addr = addr;

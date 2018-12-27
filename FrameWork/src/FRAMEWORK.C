@@ -117,6 +117,7 @@ void TIMER0_IRQHandler(void)
 	{
 		threadSet(THREAD_TICK_SEC);
 		threadSet(THREAD_UART);
+		threadSet(THREAD_UART_DEBUG);
 	}
 	TIM_ClearIntPending(LPC_TIM0, TIM_MR0_INT);
 }
