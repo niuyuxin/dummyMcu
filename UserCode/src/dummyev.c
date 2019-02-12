@@ -73,7 +73,7 @@ int dummyPlugBmsStatusTemp(int addr, plug_bms_status_temp_t* pbst, int size)
 	uint8_t pState, len, i = 0;
 	uint8_t bmsStateBuf[] = {0, 16, 1, 2, 3, 4, 0x81, 0x82};
 	static uint8_t bmsStatus[2];
-	memset(pbst, 0, size);
+	// memset(pbst, 0, size);
 	if (addr == 1) {
 		if (GPIO_ReadValue(0) & (1<<14)) { // p0.14检测是否连接电动汽车
 			pState = 0;
@@ -114,14 +114,14 @@ int dummyPlugBmsStatusTemp(int addr, plug_bms_status_temp_t* pbst, int size)
 	}
 	pbst->plugstatus = pState;
 	pbst->bmsstatus = bmsStatus[addr-1];
-	pbst->status.all = 0;
-	pbst->status.bit.insulationfault = 0;
-	pbst->status.bit.lockdriver = 0;
-	pbst->status.bit.auxivoltage1224switch = 0;
-	pbst->status.bit.relais = 0;
+	// pbst->status.all = 0;
+//	pbst->status.bit.insulationfault = 0;
+//	pbst->status.bit.lockdriver = 0;
+//	pbst->status.bit.auxivoltage1224switch = 0;
+//	pbst->status.bit.relais = 0;
 	pbst->temperature = 66u;
-	pbst->status.bit.emergency = 0;
-	pbst->status.bit.dcmetercommfault = 0;
+//	pbst->status.bit.emergency = 0;
+//	pbst->status.bit.dcmetercommfault = 0;
 	
 	nccs_frame.addr = addr;
 	nccs_frame.order = 2;
@@ -256,19 +256,21 @@ int dummyBsm(bsm_t* bsm)  // Fixme:
 	bsm->bsm[0] = 10;
 	return 0;
 }
+extern uint8_t checkInsulation;
 int dummyInsulation(int addr, uint32_t* insulation, int size)
 {
 	int len;
-	
-	*insulation = 1234;
-	
-	nccs_frame.addr = addr;
-	nccs_frame.order = 0x04;
-	nccs_frame.size = size;
-	nccs_frame.data = (uint8_t*)insulation;
-	packageData(frame_buf, &nccs_frame, 1);
-	len = sizeof(nccs_frame)-sizeof(uint8_t*)+size;
-	UART2Send(LPC_UART2, frame_buf, len);
+	if (checkInsulation) {
+		*insulation = 1234;
+		
+		nccs_frame.addr = addr;
+		nccs_frame.order = 0x04;
+		nccs_frame.size = size;
+		nccs_frame.data = (uint8_t*)insulation;
+		packageData(frame_buf, &nccs_frame, 1);
+		len = sizeof(nccs_frame)-sizeof(uint8_t*)+size;
+		UART2Send(LPC_UART2, frame_buf, len);
+	}
 	return 0;
 }
 int dummyPsmOutput(int addr, psm_output_t* psmOutput, int size)

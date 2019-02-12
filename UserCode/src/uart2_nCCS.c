@@ -15,6 +15,8 @@ UART_RING_BUFFER_T rb_uart2;
 // Current Tx Interrupt enable state
 __IO FlagStatus TxIntStat_uart2;
 
+uint8_t checkInsulation = 0;
+
 /************************** PRIVATE VARIABLES *************************/
 uint8_t uart2menu[]=
 "\n\r********************************************************************************\n\r"
@@ -383,13 +385,17 @@ int analysisData(uint8_t* buf, int len)
 				}
 				break;
 			case 0x85: // ¿ªÆô¾øÔµ¼ì²â
-				if (data[3]) {
+				if (data[4]) {
 					uint8_t buf[7]; int a;
 //					din_isolation(buf, &a);
-					UART2Send(LPC_UART2, buf, a);
+// 					UART2Send(LPC_UART2, buf, a);
+					checkInsulation = 1;
+				} else {
+					checkInsulation = 0;
 				}
 				break;
-			default: break;
+			default: 
+				break;
 			}
 		}
 		index = index+data[index+2]+6;

@@ -6,6 +6,7 @@
 #include "framework.h"
 #include "debuguart.h"
 #include "user_types.h"
+#include "dummyev.h"
 
 // UART Ring buffer
 UART_RING_BUFFER_T rb_uart1;
@@ -30,7 +31,7 @@ static uint8_t uart1menu[]=
  * @param[in]	None
  * @return 		None
  *********************************************************************/
-static void UART_IntReceive(void)
+static void UART1_IntReceive(void)
 {
 	uint8_t tmpc;
 	uint32_t rLen;
@@ -119,8 +120,8 @@ void UART_DEBUG_IRQHander(void)
 	}
 
 	// Receive Data Available or Character time-out
-	if ((tmp == UART_IIR_INTID_RDA) || (tmp == UART_IIR_INTID_CTI)){
-			UART_IntReceive();
+	if ((tmp == UART_IIR_INTID_RDA) || (tmp == UART_IIR_INTID_CTI)) {
+			UART1_IntReceive();
 	}
 
 	// Transmit Holding Empty
@@ -268,7 +269,7 @@ static void uart1_init(void)
 
 	UART_ConfigStructInit(&UARTConfigStruct);
 
-	UARTConfigStruct.Baud_rate = 4800;
+	UARTConfigStruct.Baud_rate = 9600;
 
 	// Initialize UART0 peripheral with given to corresponding parameter
 	UART_Init((LPC_UART_TypeDef *)LPC_UART_DEBUG, &UARTConfigStruct);
@@ -342,6 +343,12 @@ static int copy2le(uint8_t* dst, uint8_t* src, int size)
 	}
 	return 0;
 }
+int copyToLE(char* dst, char* src, int size)
+{
+	while (size--) {
+		*dst++ = *src++;
+	}
+}
 /**
  * 解析接收到的串口数据
  */
@@ -360,7 +367,7 @@ static int analysisData(uint8_t* buf, int len)
 		if (CrcCheck_LE(data+index, data[index+3]+4) == crcValue) {
 			UART1Send(LPC_UART2, data+index, data[index+3]+7);
 			switch (buf[index+2]){
-			case 0x81: // 启动停止标志
+			case 0x81: //         
 				if (buf[index+2+1] == 1) {
 					if (buf[index+2+1+1]) {
 						; // evReadyToCharge |= (1 << buf[index+1]);
@@ -385,12 +392,16 @@ static int analysisData(uint8_t* buf, int len)
 					UART1Send(LPC_UART2, buf, a);
 				}
 				break;
+			case 0x05:
+				copyToLE((char*)&plugBmsStatusTemp.status.all, (char*)(buf+index+2+1+1), *(buf+index+1+1+1));
+				break;
 			default: break;
 			}
 		}
 		index = index+data[index+2]+6;
 	}
 }
+
 int uart1_received(void)
 {
 	static uint8_t len;

@@ -49,7 +49,7 @@ typedef struct {
 	int8_t temperature;
 	union {
 		uint16_t all;
-		struct {
+		struct error_flags_t {
 			uint8_t emergency:1;
 			uint8_t insulationabnormal:1;
 			uint8_t insulationfault:1;
