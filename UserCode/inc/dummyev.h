@@ -238,7 +238,10 @@ typedef struct {
 	uint16_t maxCur;
 	uint16_t maxVol;
 }psm_param_t;
-	
+typedef struct {
+	uint16_t vol;
+	uint16_t cur;
+} ev_req_t;
 #pragma pack()
 
 extern meter_value_status_t meterValueStatus;

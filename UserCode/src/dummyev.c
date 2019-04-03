@@ -14,6 +14,7 @@ psm_status_t psmStatus[PSM_SIZE];
 uint32_t insulationValue;
 bcs_t bcs;
 psm_output_t psmOutput;
+ev_req_t ev_req;
 bms_t bmsMsg;
 brm_t brmMsg;
 cml_temp_bcp_t cmlTempBcp;
@@ -299,6 +300,32 @@ int dummyPsmOutput(int addr, psm_output_t* psmOutput, int size)
 	UART2Send(LPC_UART2, frame_buf, len);
 	return 0;
 }
+int dummyEvReq(int addr, ev_req_t* ev_req, int size)
+{
+	int len;
+	static uint16_t req_cur[2];
+	static uint16_t req_vol[2];
+
+	if (evReadyToCharge & (1<<addr)) {
+		if (req_cur[addr-1] < psmParam.maxCur) req_cur[addr-1]++;
+		if (req_vol[addr-1] < psmParam.maxVol) req_vol[addr-1]++;
+	} else {
+		req_cur[addr-1] = 0;
+		req_vol[addr-1] = 0;
+		return 0;
+	}
+	ev_req->cur = req_cur[addr-1];
+	ev_req->vol = req_vol[addr-1];
+	
+	nccs_frame.addr = addr;
+	nccs_frame.order = 0x66;
+	nccs_frame.size = size;
+	nccs_frame.data = (uint8_t*)ev_req;
+	packageData(frame_buf, &nccs_frame, 0);
+	len = sizeof(nccs_frame)-sizeof(uint8_t*)+size;
+	UART2Send(LPC_UART2, frame_buf, len);
+	return 0;
+}
 int sendOnCharging()
 {
 	return 0;
@@ -320,6 +347,7 @@ int sendOnPeriod()
 		dummyBcs(i, &bcs, sizeof(bcs));
 		dummyInsulation(i, &insulation, sizeof(insulation));
 		dummyPsmOutput(i, &psmOutput, sizeof(psmOutput));
+		dummyEvReq(i, &ev_req, sizeof(ev_req));
 	}
 	timeTickStart(TIMER_TICK_THREAD_DUMMYEV_PERIOD, 100);
 	return 0;
