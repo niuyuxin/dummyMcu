@@ -5,10 +5,10 @@
  * brief: 使用io口模拟完成i2c的功能, p0.27 sda, p0.28 scl
  */
 #include "lpc177x_8x_pinsel.h"
-#include "lcp177x_8x_gpio.h"
+#include "lpc177x_8x_gpio.h"
 #define SET_I2C_SDA_OUT (GPIO_SetDir(0, 1<<27, 1))
 #define SET_I2C_SDA_IN (GPIO_SetDir(0, 1<<27, 0))
-#define 
+
 void I2C_Init(void)
 {					     
 	PINSEL_ConfigPin(0, 27, 0);

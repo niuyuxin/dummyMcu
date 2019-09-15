@@ -1,2 +1,11 @@
 Target/
 keil/
+*.swp
+*.uvguix.Administrator
+*.uvoptx
+JLinkLog.txt
+Objects/
+Listings/
+*.si4project
+DebugConfig
+JLinkSettings.ini

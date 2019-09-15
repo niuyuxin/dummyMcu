@@ -436,8 +436,8 @@ void SystemInit (void)
   LPC_SC->PLL0CON   = 0x01;             /* PLL0 Enable                        */
   LPC_SC->PLL0FEED  = 0xAA;
   LPC_SC->PLL0FEED  = 0x55;
-  while (!(LPC_SC->PLL0STAT & (1<<10)));/* Wait for PLOCK0 
-  //while (!(LPC_SC->PLL0STAT & (1<<26)));/* Wait for PLOCK0                    */
+  while (!(LPC_SC->PLL0STAT & (1<<10)));/* Wait for PLOCK0 */
+	// while (!(LPC_SC->PLL0STAT & (1<<26))); /* Wait for PLOCK0                    */
 #endif
 
 #if (PLL1_SETUP)

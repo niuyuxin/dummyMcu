@@ -29,4 +29,5 @@ int main(void)
 	while (1) {
 		threadScheduler();
 	}
+	return 0;
 }
